@@ -3,28 +3,19 @@
         <div class="search_input">
             <div class="search_input_wrapper">
                 <i class="iconfont icon-sousuo"></i>
-                <input type="text">
+                <input type="text" v-model="message">
             </div>
         </div>
         <div class="search_result">
             <h3>电影/电视剧/综艺</h3>
             <ul>
-                <li>
-                    <div class="img"><img src="/images/movie_1.jpg"></div>
+                <li v-for="item in moviesList">
+                    <div class="img"><img :src="item.img | setWH('128.180')"></div>
                     <div class="info">
-                        <p><span>无名之辈</span><span>8.5</span></p>
-                        <p>A Cool Fish</p>
-                        <p>剧情,喜剧,犯罪</p>
-                        <p>2018-11-16</p>
-                    </div>
-                </li>
-                <li>
-                    <div class="img"><img src="/images/movie_1.jpg"></div>
-                    <div class="info">
-                        <p><span>无名之辈</span><span>8.5</span></p>
-                        <p>A Cool Fish</p>
-                        <p>剧情,喜剧,犯罪</p>
-                        <p>2018-11-16</p>
+                        <p><span>{{ item.nm}}</span><span>8.5</span></p>
+                        <p>{{ item.enm }}</p>
+                        <p>{{ item.cat }}</p>
+                        <p>{{item.rt}}</p>
                     </div>
                 </li>
             </ul>
@@ -34,7 +25,65 @@
 
 <script>
     export default {
-        name: "Search"
+        name: "Search",
+        data(){
+            return {
+                message : "",
+                moviesList : [],
+                cinemasList : []
+            }
+        },
+        methods : {
+            cancelRequest(){   // 一旦触发就停止上一次的请求, axios封装的一个方法
+                if(typeof this.source === 'function'){
+                    this.source('终止请求')
+                }
+            }
+        },
+        watch : {
+            message(newVal){
+                var that = this;
+                this.cancelRequest();
+
+                this.axios.get('/api/searchList?cityId=10&kw='+newVal,{
+                    cancelToken : new this.axios.CancelToken(function executor(c) {
+                        that.source = c;
+                    })
+                }).then( (res)=>{
+                    console.log(newVal)
+                    var msg = res.data.msg;
+                    var movies = res.data.data.movies;
+                    if (msg && movies){
+                        this.moviesList = res.data.data.movies.list;
+                        this.cinemasList = res.data.data.cinemas.list;
+                    }
+                }).catch((err) =>{
+                    if(this.axios.isCancel(err)){
+                        console.log('Request candeled',err.message);   //请求如果被取消这里返回的是取消的message
+                    }else{
+                        console.log(err)
+                    }
+                })
+
+            }
+            // message(newVal){
+            //     clearTimeout(t);
+            //     var mythis = this;
+            //     var t = setTimeout(function () {
+            //         mythis.axios.get('/api/searchList?cityId=10&kw='+newVal).then( (res)=>{
+            //             var msg = res.data.msg;
+            //             var movies = res.data.data.movies;
+            //             if (msg && movies){
+            //                 mythis.moviesList = res.data.data.movies.list;
+            //                 mythis.cinemasList = res.data.data.cinemas.list;
+            //             }
+            //         })
+            //     },1000)
+            // }
+        },
+        mounted() {
+
+        }
     }
 </script>
 
